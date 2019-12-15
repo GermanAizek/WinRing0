@@ -1,0 +1,70 @@
+EXPORTS 
+
+GetDllStatus			@1
+GetDllVersion			@2
+GetDriverVersion		@3
+GetDriverType			@4
+
+InitializeOls			@7
+DeinitializeOls			@8
+
+IsCpuid					@11
+IsMsr					@12
+IsTsc					@13
+
+Hlt						@20
+Rdmsr					@21
+Wrmsr					@22
+Rdpmc					@23
+Cpuid					@24
+Rdtsc					@25
+
+HltTx					@30
+RdmsrTx					@31
+WrmsrTx					@32
+RdpmcTx					@33
+CpuidTx					@34
+RdtscTx					@35
+
+HltPx					@40
+RdmsrPx					@41
+WrmsrPx					@42
+RdpmcPx					@43
+CpuidPx					@44
+RdtscPx					@45
+
+ReadIoPortByte			@51
+ReadIoPortWord			@52
+ReadIoPortDword			@53
+WriteIoPortByte			@54
+WriteIoPortWord			@55
+WriteIoPortDword		@56
+
+ReadIoPortByteEx		@61
+ReadIoPortWordEx		@62
+ReadIoPortDwordEx		@63
+WriteIoPortByteEx		@64
+WriteIoPortWordEx		@65
+WriteIoPortDwordEx		@66
+
+SetPciMaxBusIndex		@70
+
+ReadPciConfigByte		@81
+ReadPciConfigWord		@82
+ReadPciConfigDword		@83
+WritePciConfigByte		@84
+WritePciConfigWord		@85
+WritePciConfigDword		@86
+FindPciDeviceById		@87
+FindPciDeviceByClass	@88
+
+ReadPciConfigByteEx		@91
+ReadPciConfigWordEx		@92
+ReadPciConfigDwordEx	@93
+WritePciConfigByteEx	@94
+WritePciConfigWordEx	@95
+WritePciConfigDwordEx	@96
+
+;ReadDmiMemory			@100
+;ReadPhysicalMemory     @101
+;WritePhysicalMemory    @102
