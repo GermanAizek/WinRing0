@@ -12,19 +12,7 @@
 #include <tchar.h>
 #include "OlsDll.h"
 
-//-----------------------------------------------------------------------------
-//
-// Global
-//
-//-----------------------------------------------------------------------------
-
 extern HANDLE gHandle;
-
-//-----------------------------------------------------------------------------
-//
-// Prototypes
-//
-//-----------------------------------------------------------------------------
 
 static BOOL InstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath);
 static BOOL RemoveDriver(SC_HANDLE hSCManager, LPCTSTR DriverId);
@@ -32,12 +20,6 @@ static BOOL StartDriver(SC_HANDLE hSCManager, LPCTSTR DriverId);
 static BOOL StopDriver(SC_HANDLE hSCManager, LPCTSTR DriverId);
 static BOOL SystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath);
 static BOOL IsSystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath);
-
-//-----------------------------------------------------------------------------
-//
-// Manage Driver
-//
-//-----------------------------------------------------------------------------
 
 BOOL ManageDriver(LPCTSTR DriverId, LPCTSTR DriverPath, USHORT Function)
 {
@@ -123,12 +105,6 @@ BOOL ManageDriver(LPCTSTR DriverId, LPCTSTR DriverPath, USHORT Function)
 	return rCode;
 }
 
-//-----------------------------------------------------------------------------
-//
-// Install Driver
-//
-//-----------------------------------------------------------------------------
-
 BOOL InstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath)
 {
 	SC_HANDLE	hService = NULL;
@@ -167,12 +143,6 @@ BOOL InstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath)
     return rCode;
 }
 
-//-----------------------------------------------------------------------------
-//
-// System Install Driver
-//
-//-----------------------------------------------------------------------------
-
 BOOL SystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath)
 {
 	SC_HANDLE	hService = NULL;
@@ -200,12 +170,6 @@ BOOL SystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverP
 	return rCode;
 }
 
-//-----------------------------------------------------------------------------
-//
-// Remove Driver
-//
-//-----------------------------------------------------------------------------
-
 BOOL RemoveDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
 {
     SC_HANDLE   hService = NULL;
@@ -224,12 +188,6 @@ BOOL RemoveDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
 
 	return rCode;
 }
-
-//-----------------------------------------------------------------------------
-//
-// Start Driver
-//
-//-----------------------------------------------------------------------------
 
 BOOL StartDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
 {
@@ -259,12 +217,6 @@ BOOL StartDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
 	return rCode;
 }
 
-//-----------------------------------------------------------------------------
-//
-// Stop Driver
-//
-//-----------------------------------------------------------------------------
-
 BOOL StopDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
 {
 	SC_HANDLE		hService = NULL;
@@ -284,37 +236,31 @@ BOOL StopDriver(SC_HANDLE hSCManager, LPCTSTR DriverId)
     return rCode;
 }
 
-//-----------------------------------------------------------------------------
-//
-// IsSystemInstallDriver
-//
-//-----------------------------------------------------------------------------
-
 BOOL IsSystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR DriverPath)
 {
-	SC_HANDLE				hService = NULL;
-	BOOL					rCode = FALSE;
-	DWORD					dwSize;
-	LPQUERY_SERVICE_CONFIG	lpServiceConfig;
-
-    hService = OpenService(hSCManager, DriverId, SERVICE_ALL_ACCESS);
-
-	if(hService != NULL)
+	SC_HANDLE hService = OpenService(hSCManager, DriverId, SERVICE_ALL_ACCESS);
+	if (hService != NULL)
 	{
-		QueryServiceConfig(hService, NULL, 0, &dwSize);
-		lpServiceConfig = (LPQUERY_SERVICE_CONFIG)HeapAlloc(GetProcessHeap(), 
-															HEAP_ZERO_MEMORY, dwSize);
-		QueryServiceConfig(hService, lpServiceConfig, dwSize, &dwSize);
-
-		if(lpServiceConfig->dwStartType == SERVICE_AUTO_START)
+		DWORD dwSize;
+		if (!QueryServiceConfig(hService, NULL, 0, &dwSize))
 		{
-			rCode = TRUE;
+			LPQUERY_SERVICE_CONFIG lpqsc = reinterpret_cast<LPQUERY_SERVICE_CONFIG>(new BYTE[dwSize]);
+			if (!lpqsc)
+			{
+				return FALSE;
+			}
+
+			if (!QueryServiceConfig(hService, lpqsc, dwSize, &dwSize))
+			{
+				if (lpqsc->dwStartType == SERVICE_AUTO_START)
+				{
+					CloseServiceHandle(hService);
+					delete[] lpqsc;
+					return TRUE;
+				}
+			}
 		}
-
-		CloseServiceHandle(hService);
-
-		HeapFree(GetProcessHeap(), HEAP_NO_SERIALIZE, lpServiceConfig);
 	}
 	
-	return rCode;
+	return FALSE;
 }
