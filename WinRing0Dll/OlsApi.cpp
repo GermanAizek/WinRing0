@@ -13,8 +13,9 @@
 #include <stddef.h>
 #include <malloc.h>
 #include <intrin.h>
-#include "OlsDll.h"
+#include "types.h"
 #include "OlsApi.h"
+#include "OlsDll.h"
 #include "OlsDef.h"
 #include "Driver.h"
 #include "OlsIoctl.h"
@@ -25,8 +26,8 @@
 //
 //-----------------------------------------------------------------------------
 
-const BYTE gPciNumberOfDevice =	32;
-const BYTE gPciNumberOfFunction = 8;
+const uint8_t gPciNumberOfDevice =	32;
+const uint8_t gPciNumberOfFunction = 8;
 
 //-----------------------------------------------------------------------------
 //
@@ -34,7 +35,7 @@ const BYTE gPciNumberOfFunction = 8;
 //
 //-----------------------------------------------------------------------------
 
-BYTE gPciMaxNumberOfBus = 255;
+uint8_t gPciMaxNumberOfBus = 255;
 
 extern HANDLE gHandle;
 
@@ -1291,54 +1292,46 @@ VOID WINAPI SetPciMaxBusIndex(BYTE max)
 
 DWORD WINAPI FindPciDeviceById(WORD vendorId, WORD deviceId, BYTE index)
 {
-	if(gHandle == INVALID_HANDLE_VALUE)
+	u32 pciAddress = 0xFFFFFFFF;
+	if (gHandle == INVALID_HANDLE_VALUE || vendorId == 0xFFFF)
 	{
-		return 0xFFFFFFFF;
+		return pciAddress;
 	}
 
-	DWORD bus = 0, dev = 0, func = 0;
-	DWORD count = 0;
-	DWORD pciAddress = 0xFFFFFFFF;
-	DWORD id = 0;
+	u64 id = 0;
 	DWORD error = 0;	
-	BOOL multiFuncFlag = FALSE;
-	BYTE type = 0;
-	count = 0;
-
-	if(vendorId == 0xFFFF)
+	bool multiFuncFlag = false;
+	u8 type = 0;
+	u8 count = 0;
+	for (u8 bus = 0; bus <= gPciMaxNumberOfBus; bus++)
 	{
-		return 0xFFFFFFFF;
-	}
-
-	for(bus = 0; bus <= gPciMaxNumberOfBus; bus++)
-	{
-		for(dev = 0; dev < gPciNumberOfDevice; dev++)
+		for (u8 dev = 0; dev < gPciNumberOfDevice; dev++)
 		{
-			multiFuncFlag = FALSE;
-			for(func = 0; func < gPciNumberOfFunction; func++)
+			multiFuncFlag = false;
+			for (u8 func = 0; func < gPciNumberOfFunction; func++)
 			{
-				if(multiFuncFlag == 0 && func > 0)
+				if (!multiFuncFlag && func > 0)
 				{
 					break;
 				}
 
 				pciAddress = PciBusDevFunc(bus, dev, func);
-				if(pciConfigRead(pciAddress, 0, (PBYTE)&id, sizeof(id), &error))
+				if (pciConfigRead(pciAddress, 0, (PBYTE)&id, sizeof(id), &error))
 				{
-					if(func == 0) // Is Multi Function Device
+					if (func == 0) // Is Multi Function Device
 					{
-						if(pciConfigRead(pciAddress, 0x0E, (PBYTE)&type, sizeof(type), NULL))
+						if (pciConfigRead(pciAddress, 0x0E, (PBYTE)&type, sizeof(type), NULL))
 						{
-							if(type & 0x80)
+							if (type & 0x80)
 							{
-								multiFuncFlag = TRUE;
+								multiFuncFlag = true;
 							}
 						}
 					}
 
-					if(id == (vendorId | ((DWORD)deviceId << 16)))
+					if (id == (vendorId | ((DWORD)deviceId << 16)))
 					{
-						if(count == index) 
+						if (count == index) 
 						{
 							return pciAddress;
 						}
@@ -1359,73 +1352,72 @@ DWORD WINAPI FindPciDeviceById(WORD vendorId, WORD deviceId, BYTE index)
 			}
 		}
 	}
-	return 0xFFFFFFFF;
+	pciAddress = 0xFFFFFFFF;
+	return pciAddress;
 }
 
 DWORD WINAPI FindPciDeviceByClass(BYTE baseClass, BYTE subClass, BYTE programIf, BYTE index)
 {
-	if(gHandle == INVALID_HANDLE_VALUE)
+	if (gHandle != INVALID_HANDLE_VALUE)
 	{
-		return 0xFFFFFFFF;
-	}
+		DWORD bus = 0, dev = 0, func = 0;
+		DWORD count = 0;
+		DWORD pciAddress = 0xFFFFFFFF;
+		DWORD conf[3] = { 0 };
+		DWORD error = 0;
+		BOOL multiFuncFlag = FALSE;
+		BYTE type = 0;
+		count = 0;
 
-	DWORD bus = 0, dev = 0, func = 0;
-	DWORD count = 0;
-	DWORD pciAddress = 0xFFFFFFFF;
-	DWORD conf[3] = {0};
-	DWORD error = 0;	
-	BOOL multiFuncFlag = FALSE;
-	BYTE type = 0;
-	count = 0;
-
-	for(bus = 0; bus <= gPciMaxNumberOfBus; bus++)
-	{
-		for(dev = 0; dev < gPciNumberOfDevice; dev++)
+		for (bus = 0; bus <= gPciMaxNumberOfBus; bus++)
 		{
-			multiFuncFlag = FALSE;
-			for(func = 0; func < gPciNumberOfFunction; func++)
+			for (dev = 0; dev < gPciNumberOfDevice; dev++)
 			{
-				if(multiFuncFlag == FALSE && func > 0)
+				multiFuncFlag = FALSE;
+				for (func = 0; func < gPciNumberOfFunction; func++)
 				{
-					break;
-				}
-				pciAddress = PciBusDevFunc(bus, dev, func);
-				if(pciConfigRead(pciAddress, 0, (BYTE*)conf, sizeof(conf), &error))
-				{
-					if(func == 0) // Is Multi Function Device
-					{ 
-						if(pciConfigRead(pciAddress, 0x0E, (BYTE*)&type, sizeof(type), NULL))
+					if (multiFuncFlag == FALSE && func > 0)
+					{
+						break;
+					}
+					pciAddress = PciBusDevFunc(bus, dev, func);
+					if (pciConfigRead(pciAddress, 0, (BYTE*)conf, sizeof(conf), &error))
+					{
+						if (func == 0) // Is Multi Function Device
 						{
-							if(type & 0x80)
+							if (pciConfigRead(pciAddress, 0x0E, (BYTE*)&type, sizeof(type), NULL))
 							{
-								multiFuncFlag = TRUE;
+								if (type & 0x80)
+								{
+									multiFuncFlag = TRUE;
+								}
 							}
 						}
-					}
-					if((conf[2] & 0xFFFFFF00) == 
+						if ((conf[2] & 0xFFFFFF00) ==
 							(((DWORD)baseClass << 24) |
-							((DWORD)subClass << 16) |
-							((DWORD)programIf << 8))
-						)
-					{
-						if(count == index)
+								((DWORD)subClass << 16) |
+								((DWORD)programIf << 8))
+							)
 						{
-							return pciAddress;
+							if (count == index)
+							{
+								return pciAddress;
+							}
+							count++;
+							continue;
 						}
-						count++;
-						continue;
 					}
+					/*
+					else if(error == OLS_ERROR_PCI_BUS_NOT_EXIST)
+					{
+						break;
+					}
+					else if(error == OLS_ERROR_PCI_NO_DEVICE && func == 0)
+					{
+						break;
+					}
+					*/
 				}
-				/*
-				else if(error == OLS_ERROR_PCI_BUS_NOT_EXIST)
-				{
-					break;
-				}
-				else if(error == OLS_ERROR_PCI_NO_DEVICE && func == 0)
-				{
-					break;
-				}
-				*/
 			}
 		}
 	}

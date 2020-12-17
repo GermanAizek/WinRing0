@@ -358,14 +358,11 @@ typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE hProcess, PBOOL Wow64Process)
 BOOL IsWow64()
 {
 	BOOL isWow64 = FALSE;
-	LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(
-									GetModuleHandle(_T("kernel32")), "IsWow64Process");
-
-	if(fnIsWow64Process != NULL)
+	LPFN_ISWOW64PROCESS fnIsWow64Process = reinterpret_cast<LPFN_ISWOW64PROCESS>(GetProcAddress(GetModuleHandle("kernel32"), "IsWow64Process"));
+	if (fnIsWow64Process != NULL)
 	{
-		if(! fnIsWow64Process(GetCurrentProcess(), &isWow64))
+		if (!fnIsWow64Process(GetCurrentProcess(), &isWow64))
 		{
-			// handle error
 			isWow64 = FALSE;
 		}
 	}
@@ -376,15 +373,16 @@ typedef void (WINAPI *LPFN_GETNATIVESYSTEMINFO) (LPSYSTEM_INFO lpSystemInfo);
 
 BOOL IsX64()
 {
-	SYSTEM_INFO systemInfo;
 	BOOL isX64 = FALSE;
-	LPFN_GETNATIVESYSTEMINFO fnGetNativeSystemInfo = (LPFN_GETNATIVESYSTEMINFO)GetProcAddress(
-									GetModuleHandle(_T("kernel32")), "GetNativeSystemInfo");
-
-	if(fnGetNativeSystemInfo != NULL)
+	LPFN_GETNATIVESYSTEMINFO fnGetNativeSystemInfo = reinterpret_cast<LPFN_GETNATIVESYSTEMINFO>(GetProcAddress(GetModuleHandle("kernel32"), "GetNativeSystemInfo"));
+	if (fnGetNativeSystemInfo != NULL)
 	{
+		SYSTEM_INFO systemInfo;
 		fnGetNativeSystemInfo(&systemInfo);
-		isX64 = (systemInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64);	
+		if (systemInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
+		{
+			isX64 = TRUE;
+		}
 	}
 	return isX64;
 }
