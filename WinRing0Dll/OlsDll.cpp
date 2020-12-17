@@ -90,7 +90,7 @@ BOOL WINAPI InitializeOls()
 
 VOID WINAPI DeinitializeOls()
 {
-	if(gInitDll == TRUE)
+	if(gInitDll)
 	{
 		if(gIsNT && GetRefCount() == 1)
 		{
@@ -156,7 +156,7 @@ DWORD Initialize()
 		return OLS_DLL_DRIVER_NOT_FOUND;
 	}
 
-	if(IsOnNetworkDrive(gDriverPath) == TRUE)
+	if(IsOnNetworkDrive(gDriverPath))
 	{
 		return OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK;
 	}
