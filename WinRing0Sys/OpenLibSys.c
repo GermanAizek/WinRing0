@@ -9,6 +9,8 @@
 
 #include <ntddk.h>
 #include <stddef.h>
+#include <intrin.h>
+#include <wdm.h>
 #include "OpenLibSys.h"
 
 static ULONG refCount;
@@ -37,7 +39,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
 	if (!NT_SUCCESS(status))
 	{
-		refCount = static_cast<ULONG>(-1);
+		refCount = (ULONG)(-1);
 		return status;
 	}
 	else
@@ -93,14 +95,14 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 	switch (pIrpStack->MajorFunction)
 	{
 		case IRP_MJ_CREATE:
-			if (refCount != static_cast<ULONG>(-1))
+			if (refCount != (ULONG)(-1))
 			{
 				refCount++;
 			}
 			status = STATUS_SUCCESS;
 			break;
 		case IRP_MJ_CLOSE:
-			if (refCount != static_cast<ULONG>(-1))
+			if (refCount != (ULONG)(-1))
 			{
 				refCount--;
 			}

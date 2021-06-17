@@ -16,7 +16,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\WinRing0Sys\OpenLibSys.c">
+    <ClCompile Include="OpenLibSys.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

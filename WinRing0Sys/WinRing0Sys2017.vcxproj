@@ -74,7 +74,7 @@
     <OutDir>$(SolutionDir)bin\</OutDir>
     <TargetName>WinRing0</TargetName>
     <TargetExt>.sys</TargetExt>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.18362.0\km;C:\GIT\WinRing1\WinRing0Dll;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)WinRing0Dll;C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\km;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(SolutionDir)..\tmp\$(Platform)\$(Configuration)\$(ProjectName)</IntDir>
@@ -138,7 +138,7 @@
     <ClInclude Include="..\WinRing0Sys\OpenLibSys.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\WinRing0Sys\OpenLibSys.c" />
+    <ClCompile Include="OpenLibSys.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
