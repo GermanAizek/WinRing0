@@ -11,55 +11,33 @@
 #include <stddef.h>
 #include "OpenLibSys.h"
 
-//-----------------------------------------------------------------------------
-//
-// Global
-//
-//-----------------------------------------------------------------------------
-
 static ULONG refCount;
 
-//-----------------------------------------------------------------------------
-//
-// Classic NT driver
-// DriverEntry / OlsDispatch / Unload
-//
-//-----------------------------------------------------------------------------
-
-NTSTATUS
-DriverEntry(
-	IN PDRIVER_OBJECT  DriverObject,
-	IN PUNICODE_STRING RegistryPath
-	)
-
 /*
-
 Return Value:
-
 	STATUS_SUCCESS if the driver initialized correctly, otherwise an erroror
 	indicating the reason for failure.
 */
-
+NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
-	NTSTATUS		status;
 	UNICODE_STRING  ntDeviceName;
 	UNICODE_STRING  win32DeviceName;
 	PDEVICE_OBJECT  deviceObject = NULL;
 
 	RtlInitUnicodeString(&ntDeviceName, NT_DEVICE_NAME);
 
-	status = IoCreateDevice(
+	NTSTATUS status = IoCreateDevice(
 		DriverObject,					// Our Driver Object
 		0,								// We don't use a device extension
 		&ntDeviceName,					// Device name 
 		OLS_TYPE,						// Device type
 		FILE_DEVICE_SECURE_OPEN,		// Device characteristics
 		FALSE,							// Not an exclusive device
-		&deviceObject );				// Returned ptr to Device Object
+		&deviceObject);				    // Returned ptr to Device Object
 
-	if(!NT_SUCCESS(status))
+	if (!NT_SUCCESS(status))
 	{
-		refCount = (ULONG)-1;
+		refCount = static_cast<ULONG>(-1);
 		return status;
 	}
 	else
@@ -82,65 +60,55 @@ Return Value:
 	if (!NT_SUCCESS(status))
 	{
 		// Delete everything that this routine has allocated.
-		IoDeleteDevice( deviceObject );
+		IoDeleteDevice(deviceObject);
 	}
 
 	return status;
 }
 
-NTSTATUS
-OlsDispatch(
-	IN	PDEVICE_OBJECT pDO,
-	IN	PIRP pIrp
-	)
-
 /*++
-
 Routine Description:
 	This routine is the dispatch handler for the driver.  It is responsible
 	for processing the IRPs.
 
 Arguments:
-	
 	pDO - Pointer to device object.
-
 	pIrp - Pointer to the current IRP.
 
 Return Value:
-
 	STATUS_SUCCESS if the IRP was processed successfully, otherwise an erroror
 	indicating the reason for failure.
-
 --*/
-
+NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 {
-	PIO_STACK_LOCATION pIrpStack;
-	NTSTATUS status;
-	int index;
-
-	//  Initialize the irp info field.
-	//	  This is used to return the number of bytes transfered.
+	// Initialize the irp info field.
+	// This is used to return the number of bytes transfered.
 	pIrp->IoStatus.Information = 0;
-	pIrpStack = IoGetCurrentIrpStackLocation(pIrp);
+	PIO_STACK_LOCATION pIrpStack = IoGetCurrentIrpStackLocation(pIrp);
 
-	//  Set default return status
-	status = STATUS_NOT_IMPLEMENTED;
+	// Set default return status
+	NTSTATUS status = STATUS_NOT_IMPLEMENTED;
 
 	// Dispatch based on major fcn code.
-	switch(pIrpStack->MajorFunction)
+	switch (pIrpStack->MajorFunction)
 	{
 		case IRP_MJ_CREATE:
-			if(refCount != (ULONG)-1){refCount++;}
+			if (refCount != static_cast<ULONG>(-1))
+			{
+				refCount++;
+			}
 			status = STATUS_SUCCESS;
 			break;
 		case IRP_MJ_CLOSE:
-			if(refCount != (ULONG)-1){refCount--;}
+			if (refCount != static_cast<ULONG>(-1))
+			{
+				refCount--;
+			}
 			status = STATUS_SUCCESS;
 			break;
-
 		case IRP_MJ_DEVICE_CONTROL:
-			//  Dispatch on IOCTL
-			switch(pIrpStack->Parameters.DeviceIoControl.IoControlCode)
+			// Dispatch on IOCTL
+			switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
 			{
 			case IOCTL_OLS_GET_DRIVER_VERSION:
 				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = OLS_DRIVER_VERSION;
