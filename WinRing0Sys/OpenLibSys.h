@@ -8,11 +8,19 @@
 //-----------------------------------------------------------------------------
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-#include <ntddk.h>
-#include <devioctl.h>
+#include <Windows.h>
+#include <Ntddk.h>
+//#include <devioctl.h>
+//#include <wdm.h>
+
+#ifndef RC_INVOKED
 #include <stddef.h>
+#endif
+
+#if defined(_MSC_VER) && (defined(__arm__) || defined(__aarch64__))
 #include <intrin.h>
-#include <wdm.h>
+#endif
+
 #include "OlsIoctl.h"
 
 //-----------------------------------------------------------------------------
