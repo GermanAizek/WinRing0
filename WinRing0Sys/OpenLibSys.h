@@ -7,8 +7,12 @@
 //                     Copyright 2007-2008 OpenLibSys.org. All rights reserved.
 //-----------------------------------------------------------------------------
 
+#define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #include <ntddk.h>
 #include <devioctl.h>
+#include <stddef.h>
+#include <intrin.h>
+#include <wdm.h>
 #include "OlsIoctl.h"
 
 //-----------------------------------------------------------------------------
@@ -19,6 +23,13 @@
 
 #define NT_DEVICE_NAME	L"\\Device\\WinRing0_1_2_0"
 #define DOS_DEVICE_NAME	L"\\DosDevices\\WinRing0_1_2_0"
+
+enum UNIT {
+	BYTE = 1,
+	TWOBYTES = 2,
+	FOURBYTES = 4,
+	EIGHTBYTES = 8
+};
 
 //-----------------------------------------------------------------------------
 //

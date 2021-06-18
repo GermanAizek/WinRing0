@@ -34,11 +34,7 @@
 	((OLS_DRIVER_MAJOR_VERSION << 24) | (OLS_DRIVER_MINOR_VERSION << 16) \
 	| (OLS_DRIVER_REVISION << 8) | OLS_DRIVER_RELESE) 
 
-//-----------------------------------------------------------------------------
-//
 // The IOCTL function codes from 0x800 to 0xFFF are for customer use.
-//
-//-----------------------------------------------------------------------------
 #define IOCTL_OLS_GET_DRIVER_VERSION \
 	CTL_CODE(OLS_TYPE, 0x800, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
@@ -93,22 +89,11 @@
 #define IOCTL_OLS_WRITE_PCI_CONFIG \
 	CTL_CODE(OLS_TYPE, 0x852, METHOD_BUFFERED, FILE_WRITE_ACCESS)
 
-//-----------------------------------------------------------------------------
-//
 // PCI Error Code
-//
-//-----------------------------------------------------------------------------
-
 #define OLS_ERROR_PCI_BUS_NOT_EXIST		(0xE0000001L)
 #define OLS_ERROR_PCI_NO_DEVICE			(0xE0000002L)
 #define OLS_ERROR_PCI_WRITE_CONFIG		(0xE0000003L)
 #define OLS_ERROR_PCI_READ_CONFIG		(0xE0000004L)
-
-//-----------------------------------------------------------------------------
-//
-// Support Macros
-//
-//-----------------------------------------------------------------------------
 
 // Bus Number, Device Number and Function Number to PCI Device Address
 #define PciBusDevFunc(Bus, Dev, Func)	((Bus&0xFF)<<8) | ((Dev&0x1F)<<3) | (Func&7)
@@ -118,12 +103,6 @@
 #define PciGetDev(address)				((address>>3) & 0x1F)
 // PCI Device Address to Function Number
 #define PciGetFunc(address)				(address&7)
-
-//-----------------------------------------------------------------------------
-//
-// Typedef Struct
-//
-//-----------------------------------------------------------------------------
 
 #pragma pack(push,4)
 
