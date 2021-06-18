@@ -7,10 +7,6 @@
 //                     Copyright 2007-2008 OpenLibSys.org. All rights reserved.
 //-----------------------------------------------------------------------------
 
-#include <ntddk.h>
-#include <stddef.h>
-#include <intrin.h>
-#include <wdm.h>
 #include "OpenLibSys.h"
 
 static ULONG refCount;
@@ -390,15 +386,11 @@ WriteIoPort(ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
-	ULONG nPort;
-	OLS_WRITE_IO_PORT_INPUT* param;
-	
-	param = (OLS_WRITE_IO_PORT_INPUT*)lpInBuffer;
-	nPort = param->PortNumber;
+	OLS_WRITE_IO_PORT_INPUT* param = (OLS_WRITE_IO_PORT_INPUT*)lpInBuffer;
+	ULONG nPort = param->PortNumber;
 
 	switch(ioControlCode)
 	{
-
 		case IOCTL_OLS_WRITE_IO_PORT_BYTE:
 			WRITE_PORT_UCHAR((PUCHAR)(ULONG_PTR)nPort, param->CharData);
 			break;
@@ -585,16 +577,23 @@ ReadMemory(	void	*lpInBuffer,
 	maped = MmMapIoSpace(address, size, FALSE);
 
 	error = FALSE;
-	switch(param->UnitSize){
-		case 1:
+	switch (param->UnitSize) {
+		case BYTE:
 			READ_REGISTER_BUFFER_UCHAR(maped, lpOutBuffer, param->Count);
 			break;
-		case 2:
+		case TWOBYTES:
 			READ_REGISTER_BUFFER_USHORT(maped, lpOutBuffer, param->Count);
 			break;
-		case 4:
+// TODO: on x64 ULONG == 4 bytes? maybe 8 bytes and rework to x64
+#if defined _M_X86
+		case FOURBYTES:
 			READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
 			break;
+#elif defined _M_X64
+		case EIGHTBYTES:
+			READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
+			break;
+#endif
 		default:
 			error = TRUE;
 			break;
@@ -620,21 +619,16 @@ WriteMemory(void	*lpInBuffer,
 			ULONG	*lpBytesReturned)
 {
 #ifdef _PHYSICAL_MEMORY_SUPPORT
-
-	OLS_WRITE_MEMORY_INPUT *param;
-	ULONG size;
 	PHYSICAL_ADDRESS address;
-	PVOID	maped;
-	BOOLEAN	error;
 
-	if(nInBufferSize < offsetof(OLS_WRITE_MEMORY_INPUT, Data))
+	if (nInBufferSize < offsetof(OLS_WRITE_MEMORY_INPUT, Data))
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	param = (OLS_WRITE_MEMORY_INPUT *)lpInBuffer;
+	OLS_WRITE_MEMORY_INPUT* param = (OLS_WRITE_MEMORY_INPUT*)lpInBuffer;
 
-	size = param->UnitSize * param->Count;
+	ULONG size = param->UnitSize * param->Count;
 	if (nInBufferSize < size + offsetof(OLS_WRITE_MEMORY_INPUT, Data))
 	{
 		return STATUS_INVALID_PARAMETER;
@@ -642,22 +636,25 @@ WriteMemory(void	*lpInBuffer,
 
 	address.QuadPart = param->Address.QuadPart;
 
-	maped = MmMapIoSpace(address, size, FALSE);
+	PVOID maped = MmMapIoSpace(address, size, FALSE);
 
-	error = FALSE;
-	switch(param->UnitSize){
-		case 1:
-			WRITE_REGISTER_BUFFER_UCHAR(maped, 
-										(UCHAR*)&param->Data, param->Count);
+	BOOLEAN error = FALSE;
+	switch (param->UnitSize) {
+		case BYTE:
+			WRITE_REGISTER_BUFFER_UCHAR(maped, (UCHAR*)&param->Data, param->Count);
 			break;
-		case 2:
-			WRITE_REGISTER_BUFFER_USHORT(maped,
-										(USHORT*)&param->Data, param->Count);
+		case TWOBYTES:
+			WRITE_REGISTER_BUFFER_USHORT(maped, (USHORT*)&param->Data, param->Count);
 			break;
-		case 4:
-			WRITE_REGISTER_BUFFER_ULONG(maped,
-										(ULONG*)&param->Data, param->Count);
+#if defined _M_X86
+		case FOURBYTES:
+			READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
 			break;
+#elif defined _M_X64
+		case EIGHTBYTES:
+			READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
+			break;
+#endif
 		default:
 			error = TRUE;
 			break;
@@ -665,7 +662,7 @@ WriteMemory(void	*lpInBuffer,
 
 	MmUnmapIoSpace(maped, size);
 
-	if(error)
+	if (error)
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
