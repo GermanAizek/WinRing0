@@ -270,11 +270,7 @@ Return Value:
 	}
 }
 
-//-----------------------------------------------------------------------------
-//
-// CPU
-//
-//-----------------------------------------------------------------------------
+// CPU Msr registers (Model-specific register)
 
 NTSTATUS
 ReadMsr(	void	*lpInBuffer, 
@@ -306,8 +302,7 @@ WriteMsr(	void	*lpInBuffer,
 {
 	__try
 	{
-		OLS_WRITE_MSR_INPUT* param;
-		param = (OLS_WRITE_MSR_INPUT*)lpInBuffer;
+		OLS_WRITE_MSR_INPUT* param = (OLS_WRITE_MSR_INPUT*)lpInBuffer;
 
 		__writemsr(param->Register, param->Value.QuadPart);
 		*lpBytesReturned = 0;

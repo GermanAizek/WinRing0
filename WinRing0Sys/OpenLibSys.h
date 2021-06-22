@@ -7,9 +7,32 @@
 //                     Copyright 2007-2008 OpenLibSys.org. All rights reserved.
 //-----------------------------------------------------------------------------
 
-#define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
-#include <Windows.h>
-#include <Ntddk.h>
+#pragma once
+#define WIN32_LEAN_AND_MEAN
+#include <WinUser.h>
+#undef _SLIST_HEADER_
+#include <windows.h>
+
+#undef _RTL_RUN_ONCE_DEF
+#define DECLSPEC_DEPRECATED_DDK_WINXP
+#include <ntddk.h>
+
+/******************************************************************************
+				0192  *        RtlConvertUlongToLargeInteger   (NTDLL.@)
+4c1fa161a… Jon *0193  *
+				0194  * Convert a 32 bit unsigned integer into 64 bits.
+				0195  *
+				0196  * PARAMS
+				0197  *  a [I] Number to convert
+				0198  *
+				0199  * RETURNS
+				0200  *  a.
+d76f9f963… Alex*0201  */
+//ULONGLONG WINAPI RtlConvertUlongToLargeInteger(ULONG a)
+//{
+//	return a;
+//}
+
 //#include <devioctl.h>
 //#include <wdm.h>
 
@@ -17,17 +40,11 @@
 #include <stddef.h>
 #endif
 
-#if defined(_MSC_VER) && (defined(__arm__) || defined(__aarch64__))
+#if defined(_MSC_VER)
 #include <intrin.h>
 #endif
 
 #include "OlsIoctl.h"
-
-//-----------------------------------------------------------------------------
-//
-// Device Name
-//
-//-----------------------------------------------------------------------------
 
 #define NT_DEVICE_NAME	L"\\Device\\WinRing0_1_2_0"
 #define DOS_DEVICE_NAME	L"\\DosDevices\\WinRing0_1_2_0"
