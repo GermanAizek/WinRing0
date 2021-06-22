@@ -16,9 +16,9 @@
 #endif
 
 #ifdef RUN_TIME_DYNAMIC_LINKING
-#include "../../dll/OlsApiInit.h"
+#include "../../WinRing0Dll/OlsApiInit.h"
 #else // for Load-Time Dynamic Linking
-#include "../../dll/OlsApi.h"
+#include "../../WinRing0Dll/OlsApi.h"
 #ifdef _M_X64
 #pragma comment(lib, "../../../release/WinRing0x64.lib")
 #else if
@@ -64,7 +64,7 @@ BOOL COlsSampleApp::InitInstance()
 	CWinApp::InitInstance();
 
 #ifdef RUN_TIME_DYNAMIC_LINKING
-	m_hOpenLibSys = NULL;
+	HMODULE m_hOpenLibSys = NULL;
 	if(! InitOpenLibSys(&m_hOpenLibSys))
 	{
 		AfxMessageBox(_T("DLL Load Error!!"));
