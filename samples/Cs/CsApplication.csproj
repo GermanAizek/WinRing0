@@ -28,7 +28,7 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationVersion>1.2.0.11</ApplicationVersion>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8.1</TargetFrameworkVersion>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
