@@ -1,0 +1,77 @@
+;
+; WinRing0Sys.inf
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System ; TODO: specify appropriate Class
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318} ; TODO: specify appropriate ClassGuid
+Provider=%ManufacturerName%
+CatalogFile=WinRing0Sys.cat
+DriverVer= ; TODO: set DriverVer in stampinf property pages
+PnpLockdown=1
+
+[DestinationDirs]
+DefaultDestDir = 12
+WinRing0Sys_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+WinRing0Sys.sys  = 1,,
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+
+;*****************************************
+; Install Section
+;*****************************************
+
+[Manufacturer]
+%ManufacturerName%=Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%WinRing0Sys.DeviceDesc%=WinRing0Sys_Device, Root\WinRing0Sys ; TODO: edit hw-id
+
+[WinRing0Sys_Device.NT]
+CopyFiles=Drivers_Dir
+
+[Drivers_Dir]
+WinRing0Sys.sys
+
+;-------------- Service installation
+[WinRing0Sys_Device.NT.Services]
+AddService = WinRing0Sys,%SPSVCINST_ASSOCSERVICE%, WinRing0Sys_Service_Inst
+
+; -------------- WinRing0Sys driver install sections
+[WinRing0Sys_Service_Inst]
+DisplayName    = %WinRing0Sys.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\WinRing0Sys.sys
+
+;
+;--- WinRing0Sys_Device Coinstaller installation ------
+;
+
+[WinRing0Sys_Device.NT.CoInstallers]
+AddReg=WinRing0Sys_Device_CoInstaller_AddReg
+CopyFiles=WinRing0Sys_Device_CoInstaller_CopyFiles
+
+[WinRing0Sys_Device_CoInstaller_AddReg]
+HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+
+[WinRing0Sys_Device_CoInstaller_CopyFiles]
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+
+[WinRing0Sys_Device.NT.Wdf]
+KmdfService =  WinRing0Sys, WinRing0Sys_wdfsect
+[WinRing0Sys_wdfsect]
+KmdfLibraryVersion = $KMDFVERSION$
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+DiskName = "WinRing0Sys Installation Disk"
+WinRing0Sys.DeviceDesc = "WinRing0Sys Device"
+WinRing0Sys.SVCDESC = "WinRing0Sys Service"

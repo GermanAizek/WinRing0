@@ -7,14 +7,16 @@
 //                     Copyright 2007-2008 OpenLibSys.org. All rights reserved.
 //-----------------------------------------------------------------------------
 
+/*
 #pragma once
 #define WIN32_LEAN_AND_MEAN
 #include <WinUser.h>
 #undef _SLIST_HEADER_
 #include <windows.h>
+*/
 
 #undef _RTL_RUN_ONCE_DEF
-#define DECLSPEC_DEPRECATED_DDK_WINXP
+//#define DECLSPEC_DEPRECATED_DDK_WINXP
 #include <ntddk.h>
 
 /******************************************************************************
@@ -44,7 +46,7 @@ d76f9f963… Alex*0201  */
 #include <intrin.h>
 #endif
 
-#include "OlsIoctl.h"
+#include "../WinRing0Dll/OlsIoctl.h"
 
 #define NT_DEVICE_NAME	L"\\Device\\WinRing0_1_2_0"
 #define DOS_DEVICE_NAME	L"\\DosDevices\\WinRing0_1_2_0"
