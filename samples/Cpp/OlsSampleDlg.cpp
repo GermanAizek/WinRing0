@@ -273,7 +273,7 @@ void COlsSampleDlg::Refresh()
     SetThreadAffinityMask(GetCurrentThread(), result);
     //char s[20];
     //sprintf(s, "%d", 100 - ((eax & 0x007f0000) >> 16));
-    cstr.Format(_T("cpuÎÂ¶È: %d\r\n"), 100 - ((eax & 0x007f0000) >> 16));
+    cstr.Format(_T("cpu temp: %d\r\n"), 100 - ((eax & 0x007f0000) >> 16));
     edit += cstr;
 
 	//-----------------------------------------------------------------------------
