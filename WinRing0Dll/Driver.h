@@ -14,4 +14,4 @@
 #define OLS_DRIVER_SYSTEM_INSTALL	3
 #define	OLS_DRIVER_SYSTEM_UNINSTALL	4
 
-BOOL ManageDriver(LPCTSTR DriverId, LPCTSTR DriverPath, USHORT Function);
+DWORD ManageDriver(LPCTSTR DriverId, LPCTSTR DriverPath, USHORT Function);

@@ -169,10 +169,11 @@ DWORD Initialize()
 		}
 
 		ManageDriver(OLS_DRIVER_ID, gDriverPath, OLS_DRIVER_REMOVE);
-		if(!ManageDriver(OLS_DRIVER_ID, gDriverPath, OLS_DRIVER_INSTALL))
+		DWORD dwRet = ManageDriver(OLS_DRIVER_ID, gDriverPath, OLS_DRIVER_INSTALL);
+		if(dwRet != OLS_DLL_NO_ERROR)
 		{
 			ManageDriver(OLS_DRIVER_ID, gDriverPath, OLS_DRIVER_REMOVE);
-			return OLS_DLL_DRIVER_NOT_LOADED;
+			return dwRet;
 		}
 		
 		if(OpenDriver())

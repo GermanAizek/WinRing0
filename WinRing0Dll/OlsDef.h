@@ -23,6 +23,12 @@
 #define OLS_DLL_DRIVER_NOT_LOADED_ON_NETWORK	5
 #define OLS_DLL_UNKNOWN_ERROR					9
 
+#define OLS_DLL_DRIVER_INVALID_PARAM            10
+#define OLS_DLL_DRIVER_SC_MANAGER_NOT_OPENED    11
+#define OLS_DLL_DRIVER_SC_DRIVER_NOT_INSTALLED  12
+#define OLS_DLL_DRIVER_SC_DRIVER_NOT_STARTED    13
+#define OLS_DLL_DRIVER_SC_DRIVER_NOT_REMOVED    14
+
 //-----------------------------------------------------------------------------
 //
 // Driver Type
