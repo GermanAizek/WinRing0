@@ -1,4 +1,4 @@
-# What's WinRing0
+# WinRing0
 WinRing0 is a hardware access library for Windows.
 
 ## Features
@@ -9,14 +9,15 @@ WinRing0 library allows x86/x64 Windows applications to access
 
 ## Copyrights
 
- * 2007-2009 hiyohiyo ([hiyohiyo@crystalmark.info](mailto:hiyohiyo@crystalmark.info))
+ * 2007-2009 [hiyohiyo](https://github.com/hiyohiyo) <[hiyohiyo@crystalmark.info](mailto:hiyohiyo@crystalmark.info)> - original author
+ * 2019-2023 [GermanAizek](https://github.com/GermanAizek) <[GermanAizek@yandex.ru](mailto:GermanAizek@yandex.ru)> - current maintainer
 
 SPECIAL THANKS
-
- * habe (translation support & technical assistance)
- * kashiwano masahiro (PCI Debug Library for Win32 ([http://www.otto.to/~kasiwano/](http://www.otto.to/~kasiwano/))
- * Yariv Kaplan, WinIo ([http://www.internals.com/](http://www.internals.com/))
- * Patrick (bug patch)
+ * 2007 kashiwano masahiro <<http://www.otto.to/~kasiwano/>> - PCI Debug Library for Win32 
+ * 2007 Yariv Kaplan, WinIo ([http://www.internals.com/](http://www.internals.com/))
+ * 2008 habe - translation support & technical assistance
+ * 2009 Patrick - bug patch
+ * 2023 [Vitalii Khoruzhyi](https://github.com/Merlin1st) <<merlin_1st@livejournal.com>> - x64 build, additional features and work on code
 
 ## How to Use
 Put WinRing0.dll, WinRing0x64.dll, WinRing0.sys, WinRing0x64.sys, and WinRing0.vxd into the directory where your application's executable file resides.
