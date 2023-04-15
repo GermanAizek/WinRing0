@@ -109,6 +109,11 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 			switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
 			{
 			case IOCTL_OLS_GET_DRIVER_VERSION:
+				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < 4)
+				{
+					status = STATUS_BUFFER_TOO_SMALL;
+					break;
+				}
 				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = OLS_DRIVER_VERSION;
 				pIrp->IoStatus.Information = 4;
 				status = STATUS_SUCCESS;
@@ -350,6 +355,12 @@ ReadIoPort( ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
+	if (nInBufferSize == 0 && nOutBufferSize == 0)
+	{
+		*lpBytesReturned = 0;
+		return STATUS_INVALID_PARAMETER;
+	}
+
 	ULONG nPort = *(ULONG*)lpInBuffer;
 
 	switch(ioControlCode)
