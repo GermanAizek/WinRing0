@@ -167,3 +167,13 @@ NTSTATUS	WriteMemory(
 
 NTSTATUS pciConfigRead(ULONG pciAddress, ULONG offset, void *data, int length);
 NTSTATUS pciConfigWrite(ULONG pciAddress, ULONG offset, void *data, int length);
+
+NTSTATUS BufferSizeCheck(ULONG nInBufferSize, ULONG nOutBufferSize, ULONG* lpBytesReturned)
+{
+	if (nInBufferSize == 0 && nOutBufferSize == 0)
+	{
+		*lpBytesReturned = 0;
+		return STATUS_INVALID_PARAMETER;
+	}
+	return STATUS_SUCCESS;
+}

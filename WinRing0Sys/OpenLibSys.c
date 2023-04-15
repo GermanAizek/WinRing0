@@ -120,6 +120,11 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 				break;
 
 			case IOCTL_OLS_GET_REFCOUNT:
+				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength == 0 && pIrpStack->Parameters.DeviceIoControl.InputBufferLength == 0)
+				{
+					status = STATUS_INVALID_PARAMETER;
+					break;
+				}
 				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = refCount;
 				pIrp->IoStatus.Information = sizeof(refCount);
 				status = STATUS_SUCCESS;
@@ -286,6 +291,7 @@ ReadMsr(	void	*lpInBuffer,
 {
 	__try
 	{
+		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
 		ULONGLONG data = __readmsr(*(ULONG*)lpInBuffer);
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
@@ -307,6 +313,7 @@ WriteMsr(	void	*lpInBuffer,
 {
 	__try
 	{
+		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
 		OLS_WRITE_MSR_INPUT* param = (OLS_WRITE_MSR_INPUT*)lpInBuffer;
 
 		__writemsr(param->Register, param->Value.QuadPart);
@@ -329,6 +336,7 @@ ReadPmc(	void	*lpInBuffer,
 {
 	__try
 	{
+		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
 		ULONGLONG data = __readpmc(*(ULONG*)lpInBuffer);
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
@@ -355,11 +363,7 @@ ReadIoPort( ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
-	if (nInBufferSize == 0 && nOutBufferSize == 0)
-	{
-		*lpBytesReturned = 0;
-		return STATUS_INVALID_PARAMETER;
-	}
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
 
 	ULONG nPort = *(ULONG*)lpInBuffer;
 
@@ -392,6 +396,8 @@ WriteIoPort(ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+
 	OLS_WRITE_IO_PORT_INPUT* param = (OLS_WRITE_IO_PORT_INPUT*)lpInBuffer;
 	ULONG nPort = param->PortNumber;
 
@@ -430,10 +436,8 @@ ReadPciConfig(	void	*lpInBuffer,
 	OLS_READ_PCI_CONFIG_INPUT *param;
 	NTSTATUS status;
 
-	if(nInBufferSize != sizeof(OLS_READ_PCI_CONFIG_INPUT))
-	{
-		return STATUS_INVALID_PARAMETER;
-	}
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+
 	param = (OLS_READ_PCI_CONFIG_INPUT *)lpInBuffer;
 
 	status = pciConfigRead(param->PciAddress, param->PciOffset,
