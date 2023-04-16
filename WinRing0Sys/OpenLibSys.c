@@ -109,7 +109,7 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 			switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
 			{
 			case IOCTL_OLS_GET_DRIVER_VERSION:
-				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < 4)
+				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(OLS_DRIVER_VERSION))
 				{
 					status = STATUS_BUFFER_TOO_SMALL;
 					break;
@@ -120,9 +120,9 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 				break;
 
 			case IOCTL_OLS_GET_REFCOUNT:
-				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength == 0 && pIrpStack->Parameters.DeviceIoControl.InputBufferLength == 0)
+				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(refCount))
 				{
-					status = STATUS_INVALID_PARAMETER;
+					status = STATUS_BUFFER_TOO_SMALL;
 					break;
 				}
 				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = refCount;
@@ -291,7 +291,11 @@ ReadMsr(	void	*lpInBuffer,
 {
 	__try
 	{
-		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+		if (nOutBufferSize < 8)
+		{
+			*lpBytesReturned = 0;
+			return  STATUS_BUFFER_TOO_SMALL;
+		}
 		ULONGLONG data = __readmsr(*(ULONG*)lpInBuffer);
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
@@ -313,7 +317,7 @@ WriteMsr(	void	*lpInBuffer,
 {
 	__try
 	{
-		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_WRITE_MSR_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 		OLS_WRITE_MSR_INPUT* param = (OLS_WRITE_MSR_INPUT*)lpInBuffer;
 
 		__writemsr(param->Register, param->Value.QuadPart);
@@ -336,7 +340,11 @@ ReadPmc(	void	*lpInBuffer,
 {
 	__try
 	{
-		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+		if (lpOutBuffer == NULL || nOutBufferSize < 8)
+		{
+			*lpBytesReturned = 0;
+			return  STATUS_BUFFER_TOO_SMALL;
+		}
 		ULONGLONG data = __readpmc(*(ULONG*)lpInBuffer);
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
@@ -363,7 +371,7 @@ ReadIoPort( ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
-	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(ULONG_PTR)) < 0) return STATUS_INVALID_PARAMETER;
 
 	ULONG nPort = *(ULONG*)lpInBuffer;
 
@@ -396,7 +404,7 @@ WriteIoPort(ULONG	ioControlCode,
 			ULONG	nOutBufferSize, 
 			ULONG	*lpBytesReturned)
 {
-	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_WRITE_IO_PORT_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 
 	OLS_WRITE_IO_PORT_INPUT* param = (OLS_WRITE_IO_PORT_INPUT*)lpInBuffer;
 	ULONG nPort = param->PortNumber;
@@ -436,7 +444,7 @@ ReadPciConfig(	void	*lpInBuffer,
 	OLS_READ_PCI_CONFIG_INPUT *param;
 	NTSTATUS status;
 
-	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned) < 0) return STATUS_INVALID_PARAMETER;
+	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_READ_PCI_CONFIG_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 
 	param = (OLS_READ_PCI_CONFIG_INPUT *)lpInBuffer;
 
