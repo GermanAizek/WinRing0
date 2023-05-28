@@ -43,9 +43,11 @@ DWORD gDriverType = OLS_DRIVER_TYPE_UNKNOWN;
 //-----------------------------------------------------------------------------
 
 static BOOL IsNT();
+#if (__x86_64__ || __i386__)
 static BOOL IsCpuid();
 static BOOL IsMsr();
 static BOOL IsTsc();
+#endif
 static BOOL IsWow64();
 static BOOL IsX64();
 static BOOL IsFileExist(LPCTSTR fileName);
@@ -62,12 +64,14 @@ BOOL WINAPI InitializeOls()
 	if(gInitDll == FALSE)
 	{
 		gIsNT = IsNT();
+		#if (__x86_64__ || __i386__)
 		gIsCpuid = IsCpuid();
 		if(gIsCpuid)
 		{
 			gIsMsr = IsMsr();
 			gIsTsc = IsTsc();
 		}
+		#endif
 		gDllStatus = InitDriverInfo();
 
 		if(gDllStatus == OLS_DLL_NO_ERROR)
@@ -312,9 +316,9 @@ DWORD InitDriverInfo()
 //
 //-----------------------------------------------------------------------------
 
+#if defined(__x86_64__) || defined(__i386__)
 BOOL IsCpuid()
-{
-	__try
+{	__try
 	{
 		int info[4];
 		__cpuid(info, 0x0);
@@ -344,6 +348,7 @@ BOOL IsTsc()
 
 	return ((info[3] >> 4) & 1);
 }
+#endif
 
 BOOL IsNT()
 {
@@ -419,3 +424,5 @@ BOOL IsOnNetworkDrive(LPCTSTR fileName)
 
 	return FALSE;
 }
+
+

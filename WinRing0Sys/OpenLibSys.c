@@ -283,25 +283,30 @@ Return Value:
 // CPU Msr registers (Model-specific register)
 
 NTSTATUS
-ReadMsr(	void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+ReadMsr(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
 	__try
 	{
+		UNREFERENCED_PARAMETER(nInBufferSize);
 		if (nOutBufferSize < 8)
 		{
 			*lpBytesReturned = 0;
 			return  STATUS_BUFFER_TOO_SMALL;
 		}
+#ifdef _ARM64_
+		ULONGLONG data = _ReadStatusReg(*(ULONG*)lpInBuffer);
+#else
 		ULONGLONG data = __readmsr(*(ULONG*)lpInBuffer);
+#endif
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
 		return STATUS_SUCCESS;
 	}
-	__except(EXCEPTION_EXECUTE_HANDLER)
+	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
 		*lpBytesReturned = 0;
 		return STATUS_UNSUCCESSFUL;
@@ -309,22 +314,27 @@ ReadMsr(	void	*lpInBuffer,
 }
 
 NTSTATUS
-WriteMsr(	void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+WriteMsr(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
 	__try
 	{
+		UNREFERENCED_PARAMETER(lpOutBuffer);
 		if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_WRITE_MSR_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 		OLS_WRITE_MSR_INPUT* param = (OLS_WRITE_MSR_INPUT*)lpInBuffer;
 
+#ifdef _ARM64_
+		_WriteStatusReg(param->Register, param->Value.QuadPart);
+#else
 		__writemsr(param->Register, param->Value.QuadPart);
-		*lpBytesReturned = 0;
+#endif
+		* lpBytesReturned = 0;
 		return STATUS_SUCCESS;
 	}
-	__except(EXCEPTION_EXECUTE_HANDLER)
+	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
 		*lpBytesReturned = 0;
 		return STATUS_UNSUCCESSFUL;
