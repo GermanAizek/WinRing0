@@ -10,12 +10,12 @@
 #include "stdafx.h"
 #include "OlsSample.h"
 #include "OlsSampleDlg.h"
-#include "../../dll/OlsDef.h"
+#include "../WinRing0Dll/OlsDef.h"
 
 #ifdef RUN_TIME_DYNAMIC_LINKING
-#include "../../dll/OlsApiInitExt.h"
+#include "../WinRing0/OlsApiInitExt.h"
 #else // for Load-Time Dynamic Linking
-#include "../../dll/OlsApi.h"
+#include "../WinRing0Dll/OlsApi.h"
 #endif
 
 #ifdef _DEBUG

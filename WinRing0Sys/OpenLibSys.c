@@ -18,6 +18,8 @@ Return Value:
 */
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
+	UNREFERENCED_PARAMETER(RegistryPath);
+
 	UNICODE_STRING  ntDeviceName;
 	UNICODE_STRING  win32DeviceName;
 	PDEVICE_OBJECT  deviceObject = NULL;
@@ -79,6 +81,7 @@ Return Value:
 --*/
 NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 {
+	UNREFERENCED_PARAMETER(pDO);
 	// Initialize the irp info field.
 	// This is used to return the number of bytes transfered.
 	pIrp->IoStatus.Information = 0;
@@ -90,146 +93,150 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 	// Dispatch based on major fcn code.
 	switch (pIrpStack->MajorFunction)
 	{
-		case IRP_MJ_CREATE:
-			if (refCount != (ULONG)(-1))
+	case IRP_MJ_CREATE:
+		if (refCount != (ULONG)(-1))
+		{
+			refCount++;
+		}
+		status = STATUS_SUCCESS;
+		break;
+	case IRP_MJ_CLOSE:
+		if (refCount != (ULONG)(-1))
+		{
+			refCount--;
+		}
+		status = STATUS_SUCCESS;
+		break;
+	case IRP_MJ_DEVICE_CONTROL:
+		// Dispatch on IOCTL
+		switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
+		{
+		case IOCTL_OLS_GET_DRIVER_VERSION:
+			if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < 4)
 			{
-				refCount++;
+				status = STATUS_BUFFER_TOO_SMALL;
+				break;
+			}
+			*(PULONG)pIrp->AssociatedIrp.SystemBuffer = OLS_DRIVER_VERSION;
+			pIrp->IoStatus.Information = 4;
+			status = STATUS_SUCCESS;
+			break;
+
+		case IOCTL_OLS_GET_REFCOUNT:
+			if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(refCount))
+			{
+				status = STATUS_BUFFER_TOO_SMALL;
+				break;
+			}
+			*(PULONG)pIrp->AssociatedIrp.SystemBuffer = refCount;
+			pIrp->IoStatus.Information = sizeof(refCount);
+			status = STATUS_SUCCESS;
+			break;
+
+		case IOCTL_OLS_READ_MSR:
+			status = ReadMsr(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+		case IOCTL_OLS_WRITE_MSR:
+			status = WriteMsr(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+		case IOCTL_OLS_READ_PMC:
+			status = ReadPmc(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+		case IOCTL_OLS_HALT:
+		{
+			{
+				status = STATUS_NOT_SUPPORTED;
+				break;
 			}
 			status = STATUS_SUCCESS;
 			break;
-		case IRP_MJ_CLOSE:
-			if (refCount != (ULONG)(-1))
-			{
-				refCount--;
-			}
-			status = STATUS_SUCCESS;
+		}
+		case IOCTL_OLS_READ_IO_PORT:
+		case IOCTL_OLS_READ_IO_PORT_BYTE:
+		case IOCTL_OLS_READ_IO_PORT_WORD:
+		case IOCTL_OLS_READ_IO_PORT_DWORD:
+			status = ReadIoPort(
+				pIrpStack->Parameters.DeviceIoControl.IoControlCode,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
 			break;
-		case IRP_MJ_DEVICE_CONTROL:
-			// Dispatch on IOCTL
-			switch (pIrpStack->Parameters.DeviceIoControl.IoControlCode)
-			{
-			case IOCTL_OLS_GET_DRIVER_VERSION:
-				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(OLS_DRIVER_VERSION))
-				{
-					status = STATUS_BUFFER_TOO_SMALL;
-					break;
-				}
-				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = OLS_DRIVER_VERSION;
-				pIrp->IoStatus.Information = 4;
-				status = STATUS_SUCCESS;
-				break;
-
-			case IOCTL_OLS_GET_REFCOUNT:
-				if (pIrpStack->Parameters.DeviceIoControl.OutputBufferLength < sizeof(refCount))
-				{
-					status = STATUS_BUFFER_TOO_SMALL;
-					break;
-				}
-				*(PULONG)pIrp->AssociatedIrp.SystemBuffer = refCount;
-				pIrp->IoStatus.Information = sizeof(refCount);
-				status = STATUS_SUCCESS;
-				break;
-
-			case IOCTL_OLS_READ_MSR:
-				status = ReadMsr(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_WRITE_MSR:
-				status = WriteMsr(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_READ_PMC:
-				status = ReadPmc(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_HALT:
-				__halt();
-				status = STATUS_SUCCESS;
-				break;
-
-			case IOCTL_OLS_READ_IO_PORT:
-			case IOCTL_OLS_READ_IO_PORT_BYTE:
-			case IOCTL_OLS_READ_IO_PORT_WORD:
-			case IOCTL_OLS_READ_IO_PORT_DWORD:
-				status = ReadIoPort(
-					pIrpStack->Parameters.DeviceIoControl.IoControlCode,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_WRITE_IO_PORT:
-			case IOCTL_OLS_WRITE_IO_PORT_BYTE:
-			case IOCTL_OLS_WRITE_IO_PORT_WORD:
-			case IOCTL_OLS_WRITE_IO_PORT_DWORD:
-				status = WriteIoPort(
-					pIrpStack->Parameters.DeviceIoControl.IoControlCode,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-
-			case IOCTL_OLS_READ_PCI_CONFIG:
-				status = ReadPciConfig(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_WRITE_PCI_CONFIG:
-				status = WritePciConfig(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-
-			case IOCTL_OLS_READ_MEMORY:
-				status = ReadMemory(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-			case IOCTL_OLS_WRITE_MEMORY:
-				status = WriteMemory(
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
-					pIrp->AssociatedIrp.SystemBuffer,
-					pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
-					(ULONG*)&pIrp->IoStatus.Information
-					);
-				break;
-
-
-			}
+		case IOCTL_OLS_WRITE_IO_PORT:
+		case IOCTL_OLS_WRITE_IO_PORT_BYTE:
+		case IOCTL_OLS_WRITE_IO_PORT_WORD:
+		case IOCTL_OLS_WRITE_IO_PORT_DWORD:
+			status = WriteIoPort(
+				pIrpStack->Parameters.DeviceIoControl.IoControlCode,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
 			break;
+
+		case IOCTL_OLS_READ_PCI_CONFIG:
+			status = ReadPciConfig(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+		case IOCTL_OLS_WRITE_PCI_CONFIG:
+			status = WritePciConfig(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+
+		case IOCTL_OLS_READ_MEMORY:
+			status = ReadMemory(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+		case IOCTL_OLS_WRITE_MEMORY:
+			status = WriteMemory(
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.InputBufferLength,
+				pIrp->AssociatedIrp.SystemBuffer,
+				pIrpStack->Parameters.DeviceIoControl.OutputBufferLength,
+				(ULONG*)&pIrp->IoStatus.Information
+			);
+			break;
+
+
+		}
+		break;
 	}
 
 	// We're done with I/O request.  Record the status of the I/O action.
@@ -244,7 +251,7 @@ NTSTATUS OlsDispatch(IN PDEVICE_OBJECT pDO, IN PIRP pIrp)
 VOID
 Unload(
 	PDRIVER_OBJECT DriverObject
-	)
+)
 /*++
 
 Routine Description:
@@ -274,7 +281,7 @@ Return Value:
 	// Delete the link from our device name to a name in the Win32 namespace.
 	IoDeleteSymbolicLink(&win32NameString);
 
-	if(deviceObject != NULL)
+	if (deviceObject != NULL)
 	{
 		IoDeleteDevice(deviceObject);
 	}
@@ -341,12 +348,14 @@ WriteMsr(void* lpInBuffer,
 	}
 }
 
+
+#if (_AMD64_ || __i386__)
 NTSTATUS
-ReadPmc(	void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+ReadPmc(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
 	__try
 	{
@@ -355,17 +364,19 @@ ReadPmc(	void	*lpInBuffer,
 			*lpBytesReturned = 0;
 			return  STATUS_BUFFER_TOO_SMALL;
 		}
+
 		ULONGLONG data = __readpmc(*(ULONG*)lpInBuffer);
 		memcpy((PULONG)lpOutBuffer, &data, 8);
 		*lpBytesReturned = 8;
 		return STATUS_SUCCESS;
 	}
-	__except(EXCEPTION_EXECUTE_HANDLER)
+	__except (EXCEPTION_EXECUTE_HANDLER)
 	{
 		*lpBytesReturned = 0;
 		return STATUS_UNSUCCESSFUL;
 	}
 }
+#endif
 
 //-----------------------------------------------------------------------------
 //
@@ -374,65 +385,66 @@ ReadPmc(	void	*lpInBuffer,
 //-----------------------------------------------------------------------------
 
 NTSTATUS
-ReadIoPort( ULONG	ioControlCode,
-			void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+ReadIoPort(ULONG	ioControlCode,
+	void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
 	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(ULONG_PTR)) < 0) return STATUS_INVALID_PARAMETER;
 
 	ULONG nPort = *(ULONG*)lpInBuffer;
 
-	switch(ioControlCode)
+	switch (ioControlCode)
 	{
-		case IOCTL_OLS_READ_IO_PORT_BYTE:
-			*(PUCHAR)lpOutBuffer = READ_PORT_UCHAR((PUCHAR)(ULONG_PTR)nPort);
-			break;
-		case IOCTL_OLS_READ_IO_PORT_WORD:
-			*(PUSHORT)lpOutBuffer = READ_PORT_USHORT((PUSHORT)(ULONG_PTR)nPort);
-			break;
-		case IOCTL_OLS_READ_IO_PORT_DWORD:
-			*(PULONG)lpOutBuffer = READ_PORT_ULONG((PULONG)(ULONG_PTR)nPort);
-			break;
-		default:
-			*lpBytesReturned = 0;
-			return STATUS_INVALID_PARAMETER;
-			break;
+	case IOCTL_OLS_READ_IO_PORT_BYTE:
+		*(PUCHAR)lpOutBuffer = READ_PORT_UCHAR((PUCHAR)(ULONG_PTR)nPort);
+		break;
+	case IOCTL_OLS_READ_IO_PORT_WORD:
+		*(PUSHORT)lpOutBuffer = READ_PORT_USHORT((PUSHORT)(ULONG_PTR)nPort);
+		break;
+	case IOCTL_OLS_READ_IO_PORT_DWORD:
+		*(PULONG)lpOutBuffer = READ_PORT_ULONG((PULONG)(ULONG_PTR)nPort);
+		break;
+	default:
+		*lpBytesReturned = 0;
+		return STATUS_INVALID_PARAMETER;
+		break;
 	}
-	
+
 	*lpBytesReturned = nInBufferSize;
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS
 WriteIoPort(ULONG	ioControlCode,
-			void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+	void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
+	UNREFERENCED_PARAMETER(lpOutBuffer);
 	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_WRITE_IO_PORT_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 
 	OLS_WRITE_IO_PORT_INPUT* param = (OLS_WRITE_IO_PORT_INPUT*)lpInBuffer;
 	ULONG nPort = param->PortNumber;
 
-	switch(ioControlCode)
+	switch (ioControlCode)
 	{
-		case IOCTL_OLS_WRITE_IO_PORT_BYTE:
-			WRITE_PORT_UCHAR((PUCHAR)(ULONG_PTR)nPort, param->CharData);
-			break;
-		case IOCTL_OLS_WRITE_IO_PORT_WORD:
-			WRITE_PORT_USHORT((PUSHORT)(ULONG_PTR)nPort, param->ShortData);
-			break;
-		case IOCTL_OLS_WRITE_IO_PORT_DWORD:
-			WRITE_PORT_ULONG((PULONG)(ULONG_PTR)nPort, param->LongData);
-			break;
-		default:
-			return STATUS_INVALID_PARAMETER;
-			break;
+	case IOCTL_OLS_WRITE_IO_PORT_BYTE:
+		WRITE_PORT_UCHAR((PUCHAR)(ULONG_PTR)nPort, param->CharData);
+		break;
+	case IOCTL_OLS_WRITE_IO_PORT_WORD:
+		WRITE_PORT_USHORT((PUSHORT)(ULONG_PTR)nPort, param->ShortData);
+		break;
+	case IOCTL_OLS_WRITE_IO_PORT_DWORD:
+		WRITE_PORT_ULONG((PULONG)(ULONG_PTR)nPort, param->LongData);
+		break;
+	default:
+		return STATUS_INVALID_PARAMETER;
+		break;
 	}
 
 	return STATUS_SUCCESS;
@@ -445,23 +457,23 @@ WriteIoPort(ULONG	ioControlCode,
 //-----------------------------------------------------------------------------
 
 NTSTATUS
-ReadPciConfig(	void	*lpInBuffer, 
-				ULONG	nInBufferSize, 
-				void	*lpOutBuffer, 
-				ULONG	nOutBufferSize, 
-				ULONG	*lpBytesReturned)
+ReadPciConfig(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
-	OLS_READ_PCI_CONFIG_INPUT *param;
+	OLS_READ_PCI_CONFIG_INPUT* param;
 	NTSTATUS status;
 
 	if (BufferSizeCheck(nInBufferSize, nOutBufferSize, lpBytesReturned, sizeof(OLS_READ_PCI_CONFIG_INPUT)) < 0) return STATUS_INVALID_PARAMETER;
 
-	param = (OLS_READ_PCI_CONFIG_INPUT *)lpInBuffer;
+	param = (OLS_READ_PCI_CONFIG_INPUT*)lpInBuffer;
 
 	status = pciConfigRead(param->PciAddress, param->PciOffset,
-						lpOutBuffer, nOutBufferSize);
+		lpOutBuffer, nOutBufferSize);
 
-	if(status == STATUS_SUCCESS)
+	if (status == STATUS_SUCCESS)
 	{
 		*lpBytesReturned = nOutBufferSize;
 	}
@@ -474,29 +486,28 @@ ReadPciConfig(	void	*lpInBuffer,
 }
 
 NTSTATUS
-WritePciConfig(	void *lpInBuffer, 
-				ULONG nInBufferSize, 
-				void *lpOutBuffer, 
-				ULONG nOutBufferSize, 
-				ULONG *lpBytesReturned)
+WritePciConfig(void* lpInBuffer,
+	ULONG nInBufferSize,
+	void* lpOutBuffer,
+	ULONG nOutBufferSize,
+	ULONG* lpBytesReturned)
 
 {
-	OLS_WRITE_PCI_CONFIG_INPUT *param;
+	OLS_WRITE_PCI_CONFIG_INPUT* param;
 	ULONG writeSize;
-	NTSTATUS status;
 
-	if(nInBufferSize < offsetof(OLS_WRITE_PCI_CONFIG_INPUT, Data))
+	if (nInBufferSize < offsetof(OLS_WRITE_PCI_CONFIG_INPUT, Data))
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	param = (OLS_WRITE_PCI_CONFIG_INPUT *)lpInBuffer;
+	param = (OLS_WRITE_PCI_CONFIG_INPUT*)lpInBuffer;
 	writeSize = nInBufferSize - offsetof(OLS_WRITE_PCI_CONFIG_INPUT, Data);
-	
+
 	*lpBytesReturned = 0;
 
 	return pciConfigWrite(param->PciAddress, param->PciOffset,
-							&param->Data, writeSize);
+		&param->Data, writeSize);
 
 }
 
@@ -506,7 +517,7 @@ WritePciConfig(	void *lpInBuffer,
 //
 //-----------------------------------------------------------------------------
 
-NTSTATUS pciConfigRead(ULONG pciAddress, ULONG offset, void *data, int length)
+NTSTATUS pciConfigRead(ULONG pciAddress, ULONG offset, void* data, int length)
 {
 	PCI_SLOT_NUMBER slot;
 	int error;
@@ -516,18 +527,18 @@ NTSTATUS pciConfigRead(ULONG pciAddress, ULONG offset, void *data, int length)
 	slot.u.AsULONG = 0;
 	slot.u.bits.DeviceNumber = PciGetDev(pciAddress);
 	slot.u.bits.FunctionNumber = PciGetFunc(pciAddress);
-	error =	HalGetBusDataByOffset(PCIConfiguration, busNumber, slot.u.AsULONG,
-									data, offset, length);
+	error = HalGetBusDataByOffset(PCIConfiguration, busNumber, slot.u.AsULONG,
+		data, offset, length);
 
-	if(error == 0)
+	if (error == 0)
 	{
 		return OLS_ERROR_PCI_BUS_NOT_EXIST;
 	}
-	else if(length != 2 && error == 2)
+	else if (length != 2 && error == 2)
 	{
 		return OLS_ERROR_PCI_NO_DEVICE;
 	}
-	else if(length != error)
+	else if (length != error)
 	{
 		return OLS_ERROR_PCI_READ_CONFIG;
 	}
@@ -535,7 +546,7 @@ NTSTATUS pciConfigRead(ULONG pciAddress, ULONG offset, void *data, int length)
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS pciConfigWrite(ULONG pciAddress, ULONG offset, void *data, int length)
+NTSTATUS pciConfigWrite(ULONG pciAddress, ULONG offset, void* data, int length)
 {
 	PCI_SLOT_NUMBER slot;
 	int error;
@@ -547,9 +558,9 @@ NTSTATUS pciConfigWrite(ULONG pciAddress, ULONG offset, void *data, int length)
 	slot.u.bits.DeviceNumber = PciGetDev(pciAddress);
 	slot.u.bits.FunctionNumber = PciGetFunc(pciAddress);
 	error = HalSetBusDataByOffset(PCIConfiguration, busNumber, slot.u.AsULONG,
-									data, offset, length);
+		data, offset, length);
 
-	if(error != length)
+	if (error != length)
 	{
 		return OLS_ERROR_PCI_WRITE_CONFIG;
 	}
@@ -565,27 +576,27 @@ NTSTATUS pciConfigWrite(ULONG pciAddress, ULONG offset, void *data, int length)
 //-----------------------------------------------------------------------------
 
 NTSTATUS
-ReadMemory(	void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+ReadMemory(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
-	OLS_READ_MEMORY_INPUT *param;
+	OLS_READ_MEMORY_INPUT* param;
 	ULONG	size;
 	PHYSICAL_ADDRESS address;
 	PVOID	maped;
 	BOOLEAN	error;
 
-	if(nInBufferSize != sizeof(OLS_READ_MEMORY_INPUT))
+	if (nInBufferSize != sizeof(OLS_READ_MEMORY_INPUT))
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
 
-	param = (OLS_READ_MEMORY_INPUT *)lpInBuffer;
+	param = (OLS_READ_MEMORY_INPUT*)lpInBuffer;
 	size = param->UnitSize * param->Count;
 
-	if(nOutBufferSize < size)
+	if (nOutBufferSize < size)
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
@@ -594,8 +605,8 @@ ReadMemory(	void	*lpInBuffer,
 
 #ifndef _PHYSICAL_MEMORY_SUPPORT
 
-	if(0x000C0000 > address.QuadPart 
-	|| (address.QuadPart + size - 1) > 0x000FFFFF)
+	if (0x000C0000 > address.QuadPart
+		|| (address.QuadPart + size - 1) > 0x000FFFFF)
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
@@ -606,30 +617,30 @@ ReadMemory(	void	*lpInBuffer,
 
 	error = FALSE;
 	switch (param->UnitSize) {
-		case BYTE:
-			READ_REGISTER_BUFFER_UCHAR(maped, lpOutBuffer, param->Count);
-			break;
-		case TWOBYTES:
-			READ_REGISTER_BUFFER_USHORT(maped, lpOutBuffer, param->Count);
-			break;
-// TODO: on x64 ULONG == 4 bytes? maybe 8 bytes and rework to x64
+	case BYTE:
+		READ_REGISTER_BUFFER_UCHAR(maped, lpOutBuffer, param->Count);
+		break;
+	case TWOBYTES:
+		READ_REGISTER_BUFFER_USHORT(maped, lpOutBuffer, param->Count);
+		break;
+		// TODO: on x64 ULONG == 4 bytes? maybe 8 bytes and rework to x64
 #if defined _M_X86
-		case FOURBYTES:
-			READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
-			break;
+	case FOURBYTES:
+		READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
+		break;
 #elif defined _M_X64
-		case EIGHTBYTES:
-			READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
-			break;
+	case EIGHTBYTES:
+		READ_REGISTER_BUFFER_ULONG(maped, lpOutBuffer, param->Count);
+		break;
 #endif
-		default:
-			error = TRUE;
-			break;
+	default:
+		error = TRUE;
+		break;
 	}
 
 	MmUnmapIoSpace(maped, size);
 
-	if(error)
+	if (error)
 	{
 		return STATUS_INVALID_PARAMETER;
 	}
@@ -640,12 +651,17 @@ ReadMemory(	void	*lpInBuffer,
 }
 
 NTSTATUS
-WriteMemory(void	*lpInBuffer, 
-			ULONG	nInBufferSize, 
-			void	*lpOutBuffer, 
-			ULONG	nOutBufferSize, 
-			ULONG	*lpBytesReturned)
+WriteMemory(void* lpInBuffer,
+	ULONG	nInBufferSize,
+	void* lpOutBuffer,
+	ULONG	nOutBufferSize,
+	ULONG* lpBytesReturned)
 {
+	UNREFERENCED_PARAMETER(lpInBuffer);
+	UNREFERENCED_PARAMETER(nInBufferSize);
+	UNREFERENCED_PARAMETER(lpOutBuffer);
+	UNREFERENCED_PARAMETER(nOutBufferSize);
+
 #ifdef _PHYSICAL_MEMORY_SUPPORT
 	PHYSICAL_ADDRESS address;
 
@@ -668,24 +684,24 @@ WriteMemory(void	*lpInBuffer,
 
 	BOOLEAN error = FALSE;
 	switch (param->UnitSize) {
-		case BYTE:
-			WRITE_REGISTER_BUFFER_UCHAR(maped, (UCHAR*)&param->Data, param->Count);
-			break;
-		case TWOBYTES:
-			WRITE_REGISTER_BUFFER_USHORT(maped, (USHORT*)&param->Data, param->Count);
-			break;
+	case BYTE:
+		WRITE_REGISTER_BUFFER_UCHAR(maped, (UCHAR*)&param->Data, param->Count);
+		break;
+	case TWOBYTES:
+		WRITE_REGISTER_BUFFER_USHORT(maped, (USHORT*)&param->Data, param->Count);
+		break;
 #if defined _M_X86
-		case FOURBYTES:
-			READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
-			break;
+	case FOURBYTES:
+		READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
+		break;
 #elif defined _M_X64
-		case EIGHTBYTES:
-			READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
-			break;
+	case EIGHTBYTES:
+		READ_REGISTER_BUFFER_ULONG(maped, (ULONG*)&param->Data, param->Count);
+		break;
 #endif
-		default:
-			error = TRUE;
-			break;
+	default:
+		error = TRUE;
+		break;
 	}
 
 	MmUnmapIoSpace(maped, size);
@@ -701,8 +717,8 @@ WriteMemory(void	*lpInBuffer,
 
 #else
 
-	*lpBytesReturned = 0;
-	
+	* lpBytesReturned = 0;
+
 	return STATUS_INVALID_PARAMETER;
 
 #endif

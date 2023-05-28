@@ -43,7 +43,7 @@ DWORD gDriverType = OLS_DRIVER_TYPE_UNKNOWN;
 //-----------------------------------------------------------------------------
 
 static BOOL IsNT();
-#if (__x86_64__ || __i386__)
+#if (defined(_AMD64_) || defined(__i386__))
 static BOOL IsCpuid();
 static BOOL IsMsr();
 static BOOL IsTsc();
@@ -64,7 +64,7 @@ BOOL WINAPI InitializeOls()
 	if(gInitDll == FALSE)
 	{
 		gIsNT = IsNT();
-		#if (__x86_64__ || __i386__)
+		#if (defined(_AMD64_) || defined(__i386__))
 		gIsCpuid = IsCpuid();
 		if(gIsCpuid)
 		{
@@ -316,7 +316,7 @@ DWORD InitDriverInfo()
 //
 //-----------------------------------------------------------------------------
 
-#if defined(__x86_64__) || defined(__i386__)
+#if (defined(_AMD64_) || defined(__i386__))
 BOOL IsCpuid()
 {	__try
 	{
