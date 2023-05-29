@@ -23,7 +23,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 	PDEVICE_OBJECT  deviceObject = NULL;
 
 	// The driver is inherently insecure
-	// Let's reduce the attack surface by allowing only SYSTEM to access the driver
+	// Let's reduce the attack surface by allowing only Administrators to access the driver
 	NTSTATUS status = IoCreateDeviceSecure(
 		DriverObject,					// Our Driver Object
 		0,								// We don't use a device extension
@@ -31,7 +31,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 		OLS_TYPE,						// Device type
 		FILE_DEVICE_SECURE_OPEN,		// Device characteristics
 		FALSE,
-		&SDDL_DEVOBJ_SYS_ALL,
+		&SDDL_DEVOBJ_SYS_ALL_ADM_ALL,
 		NULL,							// Device class GUID
 		&deviceObject);				    // Returned ptr to Device Object
 
