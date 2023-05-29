@@ -18,21 +18,21 @@ Return Value:
 */
 NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING RegistryPath)
 {
-	UNREFERENCED_PARAMETER(RegistryPath);
-
-	UNICODE_STRING  ntDeviceName;
-	UNICODE_STRING  win32DeviceName;
+	UNICODE_STRING  ntDeviceName = RTL_CONSTANT_STRING(NT_DEVICE_NAME);
+	UNICODE_STRING  win32DeviceName = RTL_CONSTANT_STRING(DOS_DEVICE_NAME);
 	PDEVICE_OBJECT  deviceObject = NULL;
 
-	RtlInitUnicodeString(&ntDeviceName, NT_DEVICE_NAME);
-
-	NTSTATUS status = IoCreateDevice(
+	// The driver is inherently insecure
+	// Let's reduce the attack surface by allowing only SYSTEM to access the driver
+	NTSTATUS status = IoCreateDeviceSecure(
 		DriverObject,					// Our Driver Object
 		0,								// We don't use a device extension
 		&ntDeviceName,					// Device name 
 		OLS_TYPE,						// Device type
 		FILE_DEVICE_SECURE_OPEN,		// Device characteristics
-		FALSE,							// Not an exclusive device
+		FALSE,
+		&SDDL_DEVOBJ_SYS_ALL,
+		NULL,							// Device class GUID
 		&deviceObject);				    // Returned ptr to Device Object
 
 	if (!NT_SUCCESS(status))
@@ -50,9 +50,6 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = OlsDispatch;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = OlsDispatch;
 	DriverObject->DriverUnload = Unload;
-
-	// Initialize a Unicode String containing the Win32 name for our device.
-	RtlInitUnicodeString(&win32DeviceName, DOS_DEVICE_NAME);
 
 	// Create a symbolic link between our device name  and the Win32 name
 	status = IoCreateSymbolicLink(&win32DeviceName, &ntDeviceName);

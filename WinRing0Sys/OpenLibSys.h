@@ -18,6 +18,7 @@
 #undef _RTL_RUN_ONCE_DEF
 //#define DECLSPEC_DEPRECATED_DDK_WINXP
 #include <ntddk.h>
+#include <wdmsec.h>
 
 /******************************************************************************
 				0192  *        RtlConvertUlongToLargeInteger   (NTDLL.@)
