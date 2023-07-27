@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 
 #include "OpenLibSys.h"
+#include <wdmsec.h>
 
 static ULONG refCount;
 
@@ -24,13 +25,15 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
 	RtlInitUnicodeString(&ntDeviceName, NT_DEVICE_NAME);
 
-	NTSTATUS status = IoCreateDevice(
+	NTSTATUS status = IoCreateDeviceSecure(
 		DriverObject,					// Our Driver Object
 		0,								// We don't use a device extension
 		&ntDeviceName,					// Device name 
 		OLS_TYPE,						// Device type
 		FILE_DEVICE_SECURE_OPEN,		// Device characteristics
 		FALSE,							// Not an exclusive device
+		&SDDL_DEVOBJ_SYS_ALL_ADM_ALL,
+		NULL,
 		&deviceObject);				    // Returned ptr to Device Object
 
 	if (!NT_SUCCESS(status))
