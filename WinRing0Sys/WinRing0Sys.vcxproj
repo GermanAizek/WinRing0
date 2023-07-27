@@ -63,6 +63,9 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>Wdmsec.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DriverSign>
@@ -71,6 +74,9 @@
     <ClCompile>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>Wdmsec.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Inf Include="WinRing0Sys.inf" />
