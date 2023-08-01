@@ -69,5 +69,8 @@
     <None Include="..\WinRing0Dll\OlsApi.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="OlsApiARM64.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

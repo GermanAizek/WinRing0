@@ -73,6 +73,7 @@ DWORD _stdcall W32_DeviceIOControl(DWORD	dwService,
 				);
 			break;
 		case IOCTL_OLS_READ_PMC:
+			#if (_AMD64_ || __i386__)
 			dwRetVal = ReadPmc(
 				(void *)lpDIOCParms->lpvInBuffer,
 				lpDIOCParms->cbInBuffer,
@@ -80,6 +81,10 @@ DWORD _stdcall W32_DeviceIOControl(DWORD	dwService,
 				lpDIOCParms->cbOutBuffer,
 				(void *)lpDIOCParms->lpcbBytesReturned
 				);
+			#else
+				dwRetVal = ERROR_NOT_SUPPORTED;
+			#endif
+				break;
 			break;
 		case IOCTL_OLS_HALT:
 			__asm hlt;

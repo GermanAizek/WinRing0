@@ -434,6 +434,7 @@ BOOL WINAPI RdpmcPx(DWORD index, PDWORD eax, PDWORD edx, DWORD_PTR processAffini
 	return result;
 }
 
+#if (defined(_AMD64_) || defined(__i386__))
 BOOL WINAPI Cpuid(DWORD index, PDWORD eax, PDWORD ebx, PDWORD ecx, PDWORD edx)
 {
 	if(eax == NULL || ebx == NULL || ecx == NULL || edx == NULL || gIsCpuid == FALSE)
@@ -573,6 +574,7 @@ BOOL WINAPI RdtscPx(PDWORD eax, PDWORD edx, DWORD_PTR processAffinityMask)
 
 	return result;
 }
+#endif
 
 BOOL WINAPI Hlt()
 {
