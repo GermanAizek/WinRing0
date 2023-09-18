@@ -18,6 +18,7 @@ SPECIAL THANKS
  * 2008 habe - translation support & technical assistance
  * 2009 Patrick - bug patch
  * 2023 [Vitalii Khoruzhyi](https://github.com/Merlin1st) <<merlin_1st@livejournal.com>> - x64 build, additional features and work on code
+ * 2023 [Sophie Lemos](https://github.com/SecurityAndStuff) <Press F to pay respects, thanks to microsoft-github> - fixed fatal BSOD error and porting to Windows ARM 
 
 ## How to Use
 Put WinRing0.dll, WinRing0x64.dll, WinRing0.sys, WinRing0x64.sys, and WinRing0.vxd into the directory where your application's executable file resides.
