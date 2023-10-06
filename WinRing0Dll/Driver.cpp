@@ -12,6 +12,7 @@
 #include <tchar.h>
 #include "OlsDll.h"
 #include "OlsDef.h"
+#include <new>
 
 extern HANDLE gHandle;
 
@@ -277,8 +278,12 @@ BOOL IsSystemInstallDriver(SC_HANDLE hSCManager, LPCTSTR DriverId, LPCTSTR Drive
         DWORD dwSize;
         if (!QueryServiceConfig(hService, NULL, 0, &dwSize))
         {
-            LPQUERY_SERVICE_CONFIG lpqsc = reinterpret_cast<LPQUERY_SERVICE_CONFIG>(new BYTE[dwSize]);
-            if (!lpqsc)
+            LPQUERY_SERVICE_CONFIG lpqsc = NULL;
+            try
+            {
+                lpqsc = reinterpret_cast<LPQUERY_SERVICE_CONFIG>(new BYTE[dwSize]);
+            }
+            catch (const std::bad_alloc&)
             {
                 return FALSE;
             }
