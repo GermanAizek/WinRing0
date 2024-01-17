@@ -19,7 +19,7 @@ WinRing0Sys_Device_CoInstaller_CopyFiles = 11
 1 = %DiskName%,,,""
 
 [SourceDisksFiles]
-WinRing0Sys.sys  = 1,,
+WinRing0x64.sys  = 1,,
 WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
 
 ;*****************************************
@@ -36,7 +36,7 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with
 CopyFiles=Drivers_Dir
 
 [Drivers_Dir]
-WinRing0Sys.sys
+WinRing0x64.sys
 
 ;-------------- Service installation
 [WinRing0Sys_Device.NT.Services]

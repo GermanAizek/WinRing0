@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 
 #include "OpenLibSys.h"
+#include <wdmsec.h>
 
 static ULONG refCount;
 
@@ -30,7 +31,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 		&ntDeviceName,					// Device name 
 		OLS_TYPE,						// Device type
 		FILE_DEVICE_SECURE_OPEN,		// Device characteristics
-		FALSE,
+		FALSE,							// Not an exclusive device
 		&SDDL_DEVOBJ_SYS_ALL_ADM_ALL,
 		NULL,							// Device class GUID
 		&deviceObject);				    // Returned ptr to Device Object
